@@ -7,5 +7,20 @@
   <fragment
     android:id="@+id/barcodeFragment"
     android:name="com.dany.barcodescanner.ui.dest.BarcodeFragment"
-    android:label="BarcodeFragment" />
+    android:label="BarcodeFragment" >
+    <action
+      android:id="@+id/actionToScanResultFragment"
+      app:destination="@id/scanResultFragment" />
+  </fragment>
+  <fragment
+    android:id="@+id/scanResultFragment"
+    android:name="com.dany.barcodescanner.ui.dest.ScanResultFragment"
+    android:label="ScanResultFragment" >
+    <argument
+      android:name="format"
+      app:argType="integer" />
+    <argument
+      android:name="code"
+      app:argType="string" />
+  </fragment>
 </navigation>

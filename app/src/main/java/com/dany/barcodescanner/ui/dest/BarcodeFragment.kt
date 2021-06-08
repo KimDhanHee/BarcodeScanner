@@ -12,11 +12,12 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.navigation.fragment.findNavController
 import com.dany.barcodescanner.R
 import com.dany.barcodescanner.base.BaseFragment
 import com.dany.barcodescanner.databinding.FragmentBarcodeBinding
 import com.dany.barcodescanner.util.BarcodeAnalyzer
-import java.lang.Exception
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
@@ -35,7 +36,7 @@ class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
       Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
 
-  private val cameraExecutor by lazy { Executors.newSingleThreadExecutor() }
+  private var cameraExecutor: ExecutorService? = null
 
   override fun onCreateView(
     inflater: LayoutInflater,
@@ -57,6 +58,8 @@ class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
     // this eliminates the task of opening and closing the camera since CameraX is lifecycle-aware
     val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
 
+    cameraExecutor = Executors.newSingleThreadExecutor()
+
     cameraProviderFuture.addListener({
       // used to bind the lifecycle of cameras to the lifecycle owner
       // this eliminates the task of opening and closing the camera since CameraX is lifecycle-aware
@@ -71,10 +74,17 @@ class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
       val imageAnalyzer = ImageAnalysis.Builder()
         .build()
         .also {
-          it.setAnalyzer(cameraExecutor, BarcodeAnalyzer { format, barcode ->
-            barcode ?: return@BarcodeAnalyzer
+          it.setAnalyzer(cameraExecutor!!, BarcodeAnalyzer { format, code ->
+            code ?: return@BarcodeAnalyzer
 
-            cameraExecutor.shutdown()
+            findNavController().navigate(
+              BarcodeFragmentDirections.actionToScanResultFragment(
+                format,
+                code
+              )
+            )
+
+            cameraExecutor?.shutdown()
           })
         }
 
@@ -83,7 +93,8 @@ class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
       try {
         cameraProvider.unbindAll()
         cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalyzer)
-      } catch (e: Exception) {}
+      } catch (e: Exception) {
+      }
 
     }, ContextCompat.getMainExecutor(requireContext()))
   }
@@ -91,6 +102,6 @@ class BarcodeFragment : BaseFragment<FragmentBarcodeBinding>(
   override fun onDestroy() {
     super.onDestroy()
 
-    cameraExecutor.shutdown()
+    cameraExecutor?.shutdown()
   }
 }
