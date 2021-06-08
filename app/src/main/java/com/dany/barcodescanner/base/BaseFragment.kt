@@ -13,12 +13,16 @@ open class BaseFragment<VDB : ViewDataBinding>(
   @LayoutRes
   private val layoutResID: Int
 ) : Fragment() {
+  protected lateinit var binding: VDB
+
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
     savedInstanceState: Bundle?
   ): View = DataBindingUtil.inflate<VDB>(inflater, layoutResID, container, false).run {
     lifecycleOwner = this@BaseFragment
+
+    binding = this
 
     bindingVM()
     bindingViewData()
